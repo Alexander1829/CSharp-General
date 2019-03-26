@@ -1,0 +1,41 @@
+﻿namespace Project.Logic.Settings
+{
+    /// <summary>
+    /// Настройки базы данных
+    /// </summary>
+    public static class DataBaseSettings
+    {
+
+        #region Fields and constants
+
+        /// <summary>
+        /// Время исполнения SQL запроса (с)
+        /// </summary>
+        private static int? _sqlCommandTimeout;
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Время исполнения SQL запроса (с)
+        /// </summary>
+        public static int PropName
+        {
+            get
+            {                
+                if (_sqlCommandTimeout == null)
+                    _sqlCommandTimeout = DBHelper.Settings.Get("SQLCommandTimeout").ToInt32(null);
+
+                return _sqlCommandTimeout.Value;
+            }
+            set
+            {
+                _sqlCommandTimeout = value;
+                DBHelper.Settings.Set("SQLCommandTimeout", _sqlCommandTimeout.ToString());
+            }
+        }
+        #endregion
+
+    }
+}

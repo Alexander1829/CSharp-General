@@ -1,0 +1,3 @@
+FormsAuth = formsAuth ?? new FormsAuthenticationWrapper();
+//expands to:
+FormsAuth = formsAuth != null ? formsAuth : new FormsAuthenticationWrapper();

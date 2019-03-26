@@ -1,0 +1,6 @@
+What makes you say that either a singleton or a static method isn't thread-safe? 
+Usually both should be implemented to be thread-safe.
+
+The big difference between a singleton and a bunch of static methods is that singletons can implement 
+interfaces (or derive from useful base classes, although that's less common, in my experience)
+, so you can pass around the singleton as if it were "just another" implementation.
