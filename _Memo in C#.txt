@@ -197,6 +197,28 @@ static void test2(out int a)
     Console.WriteLine("test a = {0}", a);
 }
 
+//Пример метода который копирует объект с помощью сериализации и десериализации.
+public static class ExtensionMethods
+{
+    public static T DeepClone<T>(this T a)
+    {
+        using (MemoryStream stream = new MemoryStream())
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Serialize(stream, a);
+            stream.Position = 0;
+            return (T)formatter.Deserialize(stream);
+        }
+    }
+}
+
+//Операторы(сравнения) ни что иное как методы (булевозначные (статические))
+public static bool operator >(T left, T right)
+{
+    return true;
+}
+
+
 
 
 /* --- Dependency injection --- */
