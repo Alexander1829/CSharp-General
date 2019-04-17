@@ -1,4 +1,5 @@
-﻿namespace Project.Logic.Settings
+﻿//Summary нужно всегда делать в прод проектах 
+namespace Project.Logic.Settings
 {
     /// <summary>
     /// Настройки базы данных

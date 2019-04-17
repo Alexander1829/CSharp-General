@@ -1,3 +1,4 @@
+//Пару слов о синглтоне
 What makes you say that either a singleton or a static method isn't thread-safe? 
 Usually both should be implemented to be thread-safe.
 

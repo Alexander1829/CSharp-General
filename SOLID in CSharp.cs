@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-
-/*SOLID - аббревиатура для паттерна ООП разработки. В C# выглядит нижеследующим образом:*/
+﻿/*SOLID - аббревиатура для паттерна ООП разработки. В C# выглядит нижеследующим образом:*/
 //Начну с "D". А дальше по порядку.
 namespace SOLID_in_CSharp
 {
@@ -15,7 +8,7 @@ namespace SOLID_in_CSharp
     зависимость класса от интерфейса с этими методами и полями.
     И в конструкторе вызывающего класса добавляем аргумент типа этого интерфейса. */
 
-    /*Нужен метод Send() от экземпляра типа 
+    /*Например, нужен метод Send() от экземпляра типа 
     SMS или Email или ... Заменяем на тип интерфейс IMessenger{ void Send(); }  */
     public class Notification
     {
@@ -113,7 +106,7 @@ namespace SOLID_in_CSharp
     /*Liskov Childhood Principle. Реализация дочернего класса не должна
      логически противоречить реализации родительского класса.*/
 
-    //И без примера понятен.
+    //очевидно
 
     /*Liskov Childhood Principle. End */
 
@@ -129,7 +122,7 @@ namespace SOLID_in_CSharp
         bool AddDetailsEmployee();
     }
 
-    /*Так не делаем:
+    /*Так НЕ ДЕЛАЕМ:
      public interface IEmployee
     {
         bool AddDetailsEmployee();
@@ -150,9 +143,10 @@ namespace SOLID_in_CSharp
 
 }
 
+//Пример для корректировки под стандарты Solid
 namespace WrangCode
 {
-    /* Single Responsibility. WRANG: Две метасущности - в одном классе!  */
+    /* Single Responsibility. WRANG: Две  логически несвязанные метасущности - в одном классе!  */
     public class Employee
     {
         public int ID { get; set; }
