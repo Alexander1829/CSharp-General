@@ -1,5 +1,7 @@
 /*
-As seen in the comments, for any variable that is not a primitive, 
+Q: Set a constant object variable's fields
+
+ans1) As seen in the comments, for any variable that is not a primitive, 
 the const keyword 
 will not work. Instead you can use a combination of the static and readonly keywords.
 
@@ -15,6 +17,12 @@ class MyClass
    }
 ...
 }
+
+ans2) You'll need to use readonly, not const, as you want to assign something that is not a compile time literal. To initialize the data you have several options:
+
+Use an object initializer:
+
+public static readonly PictureBox box = new PictureBox() { Value = "sample" };
 */
 
 /* --- Задачи типа Task, Асинхронные методы. --- */
