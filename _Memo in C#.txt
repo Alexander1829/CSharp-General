@@ -1,3 +1,22 @@
+/*
+As seen in the comments, for any variable that is not a primitive, 
+the const keyword 
+will not work. Instead you can use a combination of the static and readonly keywords.
+
+class MyClass
+{
+   public static readonly PictureBox availablePic = new PictureBox();
+   public static readonly PictureBox unavailablePic = new PictureBox();
+
+   static MyClass()
+   {
+      // Initialize the picture boxes here.
+      availablePic.Image = Image.FromFile("available.png");
+   }
+...
+}
+*/
+
 /* --- Задачи типа Task, Асинхронные методы. --- */
 /* Thread-ы. TPL  c 4.0 Framework. Task - задача, выполняется параллельно основному потоку.
 В .Net Framework  4.5 C#: async/await */
