@@ -1,0 +1,50 @@
+Задача.
+Предположим, у нас есть: 
+*) список объектов, большой - List<Plan> plans (по нему два раза бегать не хотим),
+*) список DTO-шек dtos (тоже большой).
+
+Нам нужно пройти по списку всех DTO-шек и по нему обновить, либо добавить планы.
+Для этого используем двойной цикл, в котором внутренний заменим LINQ выражением (на 3-й строчке):
+
+1)foreach (var dto in dtos)
+2){
+3)     var plan = plans.FirstOrDefault(l => l.PlanId == dto.PlanId);
+4)
+5)     if (plan == null)
+6)     {
+7)            plans.Add(new Plan() { PlanId = dto.PlanId });
+8)     }      
+9)     plan = plans.FirstOrDefault(l => l.PlanId == dto.PlanId);
+10)    
+11)    if (dto.INDEX_STR == "fact")
+12)    {
+13)           plan.Fact = dto.VAL;
+14)    }
+15)    else if (//…
+
+Вопрос: Предложите более оптимальное решение начиная с 4-й строки?
+
+Решение:
+Конструкция конечно рабочая, но оптимальнее не бегать два раза внутри с помощью LINQ, FirstOrDefault()
+на 3-й и 9-й строчке, а добавить флажок isFounded
+
+1)foreach (var dto in dtos)
+2){
+3)     var plan = plans.FirstOrDefault(l => l.PlanId == dto.PlanId);
+4)
+5)     bool isFounded = true;
+6)     if (plan == null)
+7)     {
+8)            isFounded = false;   
+9)            plan = new Plan() { PlanId = dto.PlanId };
+10)    }      
+11)    
+12)    
+13)    if (dto.INDEX_STR == "fact")
+14)    {
+13)           plan.Fact = dto.VAL;
+14)    }
+15)    else if (//…
+…
+N)     if (!isFounded)
+N+1)          plans.Add(plan);
