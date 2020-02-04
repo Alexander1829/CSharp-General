@@ -16,7 +16,7 @@
 8)     }      
 9)     plan = plans.FirstOrDefault(l => l.PlanId == dto.PlanId);
 10)    
-11)    //<бизнес логика>
+11)    //<бизнес логика> Какая-то бизнес логика
 12)    if (dto.Prop1 == "fact")
 13)    {
 14)           plan.Fact = dto.Val;
@@ -45,7 +45,7 @@ N)     //</бизнес логика>
 8)            isFounded = false;   
 9)            plan = new Plan() { PlanId = dto.PlanId };
 10)    }      
-11)    //<бизнес логика>  
+11)    //<бизнес логика> Какая-то бизнес логика 
 12)    if (dto.Prop1 == "fact")
 13)    {
 14)           plan.Fact = dto.Val;
