@@ -21,7 +21,7 @@
 13)    {
 14)           plan.Fact = dto.Val;
 15)    }
-16)    else if (dto.Prop1 == "plan")  
+16)    else if (dto.Prop1 == "plan" && dto.Val > 0)  
 17)    {
 18)           plan.Plan = dto.Val;
 19)    }
@@ -50,7 +50,7 @@ N)     //</бизнес логика>
 13)    {
 14)           plan.Fact = dto.Val;
 15)    }
-16)    else if (dto.Prop1 == "plan")  
+16)    else if (dto.Prop1 == "plan" && dto.Val > 0)  
 17)    {
 18)           plan.Plan = dto.Val;
 19)    }
