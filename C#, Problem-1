@@ -16,11 +16,18 @@
 8)     }      
 9)     plan = plans.FirstOrDefault(l => l.PlanId == dto.PlanId);
 10)    
-11)    if (dto.INDEX_STR == "fact")
-12)    {
-13)           plan.Fact = dto.VAL;
-14)    }
-15)    else if (//…
+11)    //<бизнес логика>
+12)    if (dto.Prop1 == "fact")
+13)    {
+14)           plan.Fact = dto.Val;
+15)    }
+16)    else if (dto.Prop1 == "plan")  
+17)    {
+18)           plan.Plan = dto.Val;
+19)    }
+20)    else if (//…){  }
+…
+N)     //</бизнес логика>
 
 Вопрос: Предложите более оптимальное решение начиная с 4-й строки?
 
@@ -38,13 +45,17 @@
 8)            isFounded = false;   
 9)            plan = new Plan() { PlanId = dto.PlanId };
 10)    }      
-11)    
-12)    
-13)    if (dto.INDEX_STR == "fact")
-14)    {
-13)           plan.Fact = dto.VAL;
-14)    }
-15)    else if (//…
+11)    //<бизнес логика>  
+12)    if (dto.Prop1 == "fact")
+13)    {
+14)           plan.Fact = dto.Val;
+15)    }
+16)    else if (dto.Prop1 == "plan")  
+17)    {
+18)           plan.Plan = dto.Val;
+19)    }
+20)    else if (//…){  } 
 …
-N)     if (!isFounded)
-N+1)          plans.Add(plan);
+N)     //</бизнес логика>
+N+1)   if (!isFounded)
+N+2)        plans.Add(plan);
