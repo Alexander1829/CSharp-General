@@ -255,6 +255,16 @@ public static bool operator >(T left, T right)
 
 
 
+using (HttpClient client = new HttpClient())
+{
+    HttpClient.DefaultProxy.Credentials = CredentialCache.DefaultCredentials; 
+
+    var response = client.GetAsync(_url).Result;
+    string respContent = response.Content.ReadAsStringAsync().Result;    
+    //можно спарсить контент на JSON-формат
+    //var jsonResponse = JsonDocument.Parse(respContent);    
+    //jsonResponse.RootElement.GetProperty("");
+}
 /* --- Http Request, Response --- */
 var uri = "http://asd.com";
 var request1 = WebRequest.Create(uri) as HttpWebRequest;
