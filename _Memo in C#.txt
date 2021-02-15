@@ -133,10 +133,10 @@ private async void btnGetData_click(object sender)
 
 //Ещё важный пример await-а
 Customer customer = new Customer();
-var widgetsTask = _widgetService.GetAllWidgets();
-var foosTask = _fooService.GetAllWidgets();
-customer.Widgets = await widgetsTask;
-customer.Foos = await foosTask;
+var widgetsTask = _widgetService.GetAllWidgets(); //Уже запустился!!!! параллельно
+var foosTask = _fooService.GetAllWidgets(); //тоже запустился!!!! параллельно
+customer.Widgets = await widgetsTask; //а теперь дождёмся самого долгого!
+customer.Foos = await foosTask; //а теперь дождёмся самого долгого!
 
 return customer;
 
