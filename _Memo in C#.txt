@@ -255,6 +255,23 @@ public static bool operator >(T left, T right)
 
 
 
+using (HttpClientHandler handler = new HttpClientHandler())
+{
+    handler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
+    handler.Proxy = new WebProxy("http://ms-proxy.abcd.ru:8080");
+    using (HttpClient client = new HttpClient(handler))                
+    {
+        client.BaseAddress = new Uri(this.DiscSettings.BaseAddress);
+        client.DefaultRequestHeaders.Add("Authorization", String.Concat("Basic ", this.ClientSettings.DiscoveryAuthString));
+        var methodUri = "v2/discovery";
+        var body = "{ \"Redirect_URL\": \"https://mmyadd.myurl.ru/api/v1/mymet\", \"MSISDN\": \"79061234567\" }";
+        var content = new StringContent(body);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        var response = client.PostAsync(methodUri, content).Result;
+        var sc = response.StatusCode;
+    }
+}
+
 using (HttpClient client = new HttpClient())
 {
     HttpClient.DefaultProxy.Credentials = CredentialCache.DefaultCredentials; 
