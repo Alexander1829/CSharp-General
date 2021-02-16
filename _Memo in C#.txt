@@ -515,9 +515,9 @@ namespace DiSample
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             // This is where DI magic happens:
-            var myCart = ActivatorUtilities.CreateInstance<ShoppingCart>(serviceProvider);
+            var shoppingCart = ActivatorUtilities.CreateInstance<ShoppingCart>(serviceProvider);
 
-            myCart.PlaceOrder("customer@home.com", "2 Widgets");
+            shoppingCart.PlaceOrder("customer@home.com", "2 Widgets");
 
             System.Console.Write("Press any key to end.");
             System.Console.ReadLine();
