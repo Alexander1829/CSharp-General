@@ -456,7 +456,54 @@ JsonSerializer.Serialize(requestBody); //System.Text.Json.JsonSerializer
 var fullResponse = JsonSerializer.Deserialize<DiscoveryResponse>(responseString); //System.Text.Json.JsonSerializer
 
 
-/////// DI for console app.
+
+
+///<Custom httpClient>
+
+public class GitHubClient
+{
+    public HttpClient Client { get; private set; }
+    
+    public GitHubClient(HttpClient httpClient)
+    {
+        httpClient.BaseAddress = new Uri("https://api.github.com/");
+        httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+        httpClient.DefaultRequestHeaders.Add("User-Agent", "HttpClientFactory-Sample");
+        Client = httpClient;
+    }
+}
+
+//Register this as a typed client using the following line.
+services.AddHttpClient<GitHubClient>();
+
+
+//And, use it in the following way in the API controller.
+public class ValuesController : Controller
+{
+    private readonly GitHubClient _gitHubClient;;
+  
+    public ValuesController(GitHubClient gitHubClient)
+    {
+        _gitHubClient = gitHubClient;
+    }
+  
+    [HttpGet]
+    public async Task<ActionResult> Get()
+    {
+        string result = await _gitHubClient.client.GetStringAsync("/");
+        return Ok(result);
+    }
+}
+
+
+<////Custom httpClient>
+
+
+
+
+
+///<DI for console app.>
+
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
@@ -525,6 +572,8 @@ namespace DiSample
     }
 }
 
+
+<////DI for console app.>
 
 
 
