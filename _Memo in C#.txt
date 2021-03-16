@@ -501,6 +501,31 @@ public class ValuesController : Controller
 
 
 
+// На скорую руку заселектить из бд
+public static async Task<T?> SqlQueryRawAsync<T>(string query, Func<DbDataReader, T> map) where T : class?//, new() 
+{
+	using (var context = new AggregatorContext())
+	{
+		using (var command = context.Database.GetDbConnection().CreateCommand())
+		{
+			command.CommandText = query;
+			command.CommandType = CommandType.Text;
+			context.Database.OpenConnection();
+			using (var result = await command.ExecuteReaderAsync())
+			{
+				T entity = null;
+				if (await result.ReadAsync())
+				{
+					entity = map(result);
+					return entity;
+				}
+				return entity;
+			}
+		}
+	}
+}
+
+
 
 ///<DI for console app.>
 
