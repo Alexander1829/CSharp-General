@@ -1,61 +1,29 @@
 Задача.
-Предположим, у нас есть: 
-*) список объектов, большой - List<Plan> plans (по нему два раза бегать не хотим),
-*) список DTO-шек dtos (тоже большой).
+Предположим, у нас есть коллекция объектов, типа List<Plan>, 
+называющаяся plansSelection (в коллекции от 5 000 000 до 10 000 000 элементов). 
+<code>
+  class Plan { public string PlanId {get; set;} public decimal DeltaValue {get; set;} }
+</code>
+PlanId - может повторяться в plansSelection.
 
-Нам нужно пройти по списку всех DTO-шек и по нему обновить, либо добавить планы.
-Для этого используем двойной цикл, в котором внутренний заменим LINQ выражением (на 3-й строчке):
+Нужно: создать пополняемую коллекцию объектов, называющуюся newPlans - реализацию придумать самостоятельно -,
+элементы которой будут содержать ключ PlanId и значение Value равное сумме всех значений DeltaValue из plansSelection
+с соответствующим PlanId.
 
-1)foreach (var dto in dtos)
-2){
-3)     var plan = plans.FirstOrDefault(l => l.PlanId == dto.PlanId);
-4)
-5)     if (plan == null)
-6)     {
-7)            plans.Add(new Plan() { PlanId = dto.PlanId });
-8)     }      
-9)     plan = plans.FirstOrDefault(l => l.PlanId == dto.PlanId);
-10)    
-11)    //<бизнес логика> Какая-то бизнес логика
-12)    if (dto.Prop1 == "fact")
-13)    {
-14)           plan.Fact = dto.Val;
-15)    }
-16)    else if (dto.Prop1 == "plan" && dto.Val > 0)  
-17)    {
-18)           plan.Plan = dto.Val;
-19)    }
-20)    else if (//…){  }
-…
-N)     //</бизнес логика>
-
-Вопрос: Предложите более оптимальное решение начиная с 4-й строки?
 
 Решение:
-Конструкция конечно рабочая, но оптимальнее не бегать второй раз внутри с помощью LINQ, FirstOrDefault()
-на 9-й строчке, а добавить флажок isFounded
-
-1)foreach (var dto in dtos)
-2){
-3)     var plan = plans.FirstOrDefault(l => l.PlanId == dto.PlanId);
-4)
-5)     bool isFounded = true;
-6)     if (plan == null)
-7)     {
-8)            isFounded = false;   
-9)            plan = new Plan() { PlanId = dto.PlanId };
-10)    }      
-11)    //<бизнес логика> Какая-то бизнес логика 
-12)    if (dto.Prop1 == "fact")
-13)    {
-14)           plan.Fact = dto.Val;
-15)    }
-16)    else if (dto.Prop1 == "plan" && dto.Val > 0)  
-17)    {
-18)           plan.Plan = dto.Val;
-19)    }
-20)    else if (//…){  } 
-…
-N)     //</бизнес логика>
-N+1)   if (!isFounded)
-N+2)        plans.Add(plan);
+<code>
+public void Calculate(List<Plan> plansSelection, Dictionary<string, BigInteger> newPlans)
+{
+  foreach (var plan in plansSelection)	  
+  { 	
+    if(newPlans.ContainsKey(plan.Id))
+    {
+      newPlans[plan.Id] = BigInteger.Add(newPlans[plan.Id], new BigInteger(plan.DeltaValue));
+    }
+    else
+      newPlans.Add(plan.Id, new BigInteger(plan.DeltaValue));
+  }			
+}	
+</code>
+Комментарий: ключевым моментом является использование индексированной коллекции, Dictionary.
