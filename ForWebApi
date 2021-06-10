@@ -1,0 +1,38 @@
+1) Supporting for POST method both application/json and application/x-www-form-urlencoded types
+
+        [HttpPost]
+        [Route("api/v{version:apiVersion}/auth/mobileid/notification")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(500)]
+        public IActionResult MobileIdSiCallback(AuthMobileIdCallbackRequest request)
+        {
+            return MobileIdSiCallback(request, HttpContext.User.Identity as ClaimsIdentity);
+        }
+
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [HttpPost]
+        [Route("api/v{version:apiVersion}/auth/mobileid/notification")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(500)]
+        [Consumes("application/x-www-form-urlencoded")]
+        public IActionResult MobileIdSiCallbackUrlEncoded([FromForm] AuthMobileIdCallbackRequest request)
+        {
+            return MobileIdSiCallback(request, HttpContext.User.Identity as ClaimsIdentity);
+        }
+
+        private IActionResult MobileIdSiCallback(AuthMobileIdCallbackRequest request, ClaimsIdentity identity)
+        {
+            AuthMobileIdCallbackResponse res = serviceClient.GetAuthMobileIdCallbackResponse(request, identity);
+
+            return res.TokenValid switch
+            {
+                false => new ContentResult
+                {
+                    StatusCode = (int)HttpStatusCode.Forbidden,
+                    Content = "Invalid token or request data"
+                },
+                true => Ok()
+            };
+        }
