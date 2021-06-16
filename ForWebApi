@@ -36,3 +36,44 @@
                 true => Ok()
             };
         }
+
+2) Small temporary apis for 
+
+IOptions<FileLoggerOptions> fileLoggerOptions;
+
+//get deploy time. temporary
+[HttpGet("deploy-time")]
+public string DeployTime()
+{
+	var assemblyPath = Assembly.GetExecutingAssembly().Location;
+	var creationTime = System.IO.File.GetCreationTime(assemblyPath);
+	return creationTime.ToString();
+}
+
+//get log. temporary
+[HttpGet("getlog")]
+public object? GetLog(string? date = null)
+{
+	if (string.IsNullOrEmpty(date))
+		date = DateTime.Now.ToString("yyyy-MM-dd");
+	var fileName = fileLoggerOptions.Value!.FileNameTemplate!.Replace("{date}", date);
+	var filePath = Path.Combine(fileLoggerOptions.Value!.FolderPath!, fileName);
+	if (System.IO.File.Exists(filePath))
+	{
+		string text = System.IO.File.ReadAllText(filePath);
+		return text;
+	}
+	return null;
+}
+
+//create entity, for example, token
+[HttpGet("token/{msisdn}")]
+public string Token(string msisdn) => SignedJwtCreator.Create(new Dictionary<string, object>()
+{
+	[OpenIdConnectParameterNames.AcrValues] = "2",
+	[OpenIdConnectParameterNames.ClientId] = "client_a",
+	[OpenIdConnectParameterNames.LoginHint] = $"MSISDN:{msisdn}",
+	[OpenIdConnectParameterNames.Scope] = "openid mc_identity_basic",
+	[MobileConnectParameterNames.ClientNotificationToken] = "token-for-sp-notification",
+	[MobileConnectParameterNames.NotificationUri] = "http://client-a.ru/notification"
+}, settings.PrivateKey!, settings.Kid);
