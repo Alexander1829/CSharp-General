@@ -1,0 +1,49 @@
+namespace Beeline.MobileId.Aggregator.BusinessLogic.Billing
+{
+	public class BillingQueueService : BackgroundService
+	{
+		ILogger<BillingQueueService> logger;
+		Settings settings;
+		SemaphoreSlim mySemaphoreSlim = new SemaphoreSlim(1, 1);
+
+		public BillingQueueService(ILogger<BillingQueueService> logger, IOptions<Settings> settings)
+		{
+			this.logger = logger;
+			this.settings = settings.Value;
+		}
+
+		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+		{
+			logger.LogInformation("BillingQueueService started at: {time}", DateTimeOffset.Now);
+
+			CreateDirectoryIfNotExists();
+
+			while (!stoppingToken.IsCancellationRequested)
+			{
+				//await DoWorkAsync();
+				await Task.Delay(settings.Billing!.CreateFilePeriodInSeconds!.Value * 1000, stoppingToken);
+			}
+		}
+
+		async Task DoWorkAsync()
+		{
+			await mySemaphoreSlim.WaitAsync();
+			try
+			{
+				var billingQueue = await AggregatorContext.QueryAsync(ctx => ctx.BillingTransactions.ToArrayAsync());
+
+				if (billingQueue.Length > 0)
+				{
+				}
+			}
+			catch (Exception e)
+			{
+				logger.LogError(e.StackTrace);
+			}
+			finally
+			{
+				mySemaphoreSlim.Release();
+			}
+		}
+	}
+}
