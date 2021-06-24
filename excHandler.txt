@@ -1,6 +1,0 @@
-//Вариант отлова ошибки когда она ловится для логгирования и дальше пробрасывается для остановки приложения.
-            catch (Exception exc)
-            {
-                LogHelper.AddError(LogPriorities.Normal, "Не удалось получить список заявок на конкурсы для членов конкурсной комиссии", exc.ToString()); //Log in logger, but throw later
-throw;
-            }
