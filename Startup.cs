@@ -1,15 +1,19 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using Beeline.MobileId.Aggregator.Api.Logging;
 using Beeline.MobileId.Aggregator.BusinessLogic;
+using Beeline.MobileId.Aggregator.BusinessLogic.Billing;
 using Beeline.MobileId.Aggregator.BusinessLogic.Dal;
 using Beeline.MobileId.Aggregator.BusinessLogic.Dal.Repositories;
 using Beeline.MobileId.Aggregator.Common;
-using Beeline.MobileId.Aggregator.Cryptography;
 using Beeline.MobileId.Aggregator.Db;
+using Beeline.MobileId.Aggregator.Integrations.Discovery;
+using Beeline.MobileId.Aggregator.Integrations.Idgw;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +23,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.OpenApi.Models;
 using static Microsoft.EntityFrameworkCore.NpgsqlDbContextOptionsBuilderExtensions;
+using Hangfire;
 
 namespace Beeline.MobileId.Aggregator.Api
 {
@@ -31,12 +36,15 @@ namespace Beeline.MobileId.Aggregator.Api
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddControllers();
+			services.AddHealthChecks().AddSqlServer(Configuration["ApiApplicationSettings:AggregatorDb"], tags: new[] { "db", "all" });
 			services.AddMemoryCache();
-			services.AddDbContext<AppDbContext>(options => options.UseNpgsql(Configuration["ApplicationSettings:ServiceDb"]));
+			services.AddDbContext<AppDbContext>(options => options.UseNpgsql(Configuration["ApiApplicationSettings:ServiceDb"]));
+			services.AddHangfire(x => x.UseSqlServerStorage(Configuration["ApiApplicationSettings:AggregatorDb"]));
+			services.AddHangfireServer();
 
 			services.AddSwaggerGen(c =>
 			{
-				c.SwaggerDoc("v1", new() { Title = "Agreagator platform api", Version = "v1" });
+				c.SwaggerDoc("v1", new() { Title = "Aggregator platform api", Version = "v1" });
 				c.AddSecurityDefinition("basic", new()
 				{
 					Name = "Authorization",
@@ -87,36 +95,49 @@ namespace Beeline.MobileId.Aggregator.Api
 				});
 			});
 
-			services.AddTransient(delegate
-			{
-				Settings settings = new();
-				new ConfigurationBuilder().AddJsonFile("appsettings.json", false).Build().GetSection("ApplicationSettings").Bind(settings);
-				return settings;
-			});
-
-			services.AddHttpClient(Options.DefaultName).ConfigurePrimaryHttpMessageHandler(sp =>
-			{
-				var settings = sp.GetRequiredService<Settings>();
-				HttpClientHandler handler = new() { DefaultProxyCredentials = CredentialCache.DefaultCredentials };
-				if (!string.IsNullOrWhiteSpace(settings.Proxy?.Address))
-				{
-					handler.Proxy = new WebProxy(settings.Proxy.Address);
-					if (!string.IsNullOrWhiteSpace(settings.Proxy.UserName))
-						handler.Proxy.Credentials = new NetworkCredential(settings.Proxy.UserName, settings.Proxy.Password, settings.Proxy.Domain);
-				}
-				return handler;
-			});
+			services.AddHttpClient(Options.DefaultName).ConfigurePrimaryHttpMessageHandler(GetHttpHandlerSetter(s => s.Default));
 			services.AddHttpClient<SIRequestAuthorizationService>();
-			services.AddHttpClient<IdGatewayConnector>();
+			services.AddHttpClient<IdgwConnector>().ConfigurePrimaryHttpMessageHandler(GetHttpHandlerSetter(s => s.Idgw));
+			services.AddHttpClient<DiscoveryConnector>().ConfigureHttpMessageHandlerBuilder((c) => c.PrimaryHandler = new HttpClientHandler() { AllowAutoRedirect = false, Proxy = new WebProxy(Configuration["ApiApplicationSettings:Proxies:Default:Address"]) { UseDefaultCredentials = true } });
 
 			services.AddTransient<SIRequestValidationService>();
-			services.AddTransient<JwtSignatureValidator>();
 			services.AddTransient<AggregatorContext>();
 			services.AddTransient<NfsRepository>();
 			services.AddTransient<AppRepository>();
 			services.AddTransient<CacheAccessor>();
 			services.AddTransient<NfsService>();
+			services.AddTransient<DIRequestAuthorizationService>();
+			services.AddTransient<DIMCTokenService>();
+			services.AddTransient<DIRequestValidationService>();
+			services.AddTransient<StateDIAuthorizationService>();
+			services.AddTransient<StatePremiumInfoService>();
+			services.AddTransient<PremiumInfoValidationService>();
+
+			services.AddSingleton<IdgwConnectorManager>();
+
+			services.Configure<Settings>(Configuration.GetSection("ApiApplicationSettings"));
 		}
+
+		static Func<IServiceProvider, HttpClientHandler> GetHttpHandlerSetter(Func<ProxySet, Proxy?> proxySelector) => sp =>
+		{
+			HttpClientHandler handler = new()
+			{
+				AllowAutoRedirect = false,
+				DefaultProxyCredentials = CredentialCache.DefaultCredentials
+			};
+			var proxies = sp.GetRequiredService<IOptions<Settings>>().Value.Proxies;
+			if (proxies != null)
+			{
+				var proxy = proxySelector(proxies);
+				if (!string.IsNullOrWhiteSpace(proxy?.Address))
+				{
+					handler.Proxy = new WebProxy(proxy.Address);
+					if (!string.IsNullOrWhiteSpace(proxy.UserName))
+						handler.Proxy.Credentials = new NetworkCredential(proxy.UserName, proxy.Password, proxy.Domain);
+				}
+			}
+			return handler;
+		};
 
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 		{
@@ -148,6 +169,8 @@ namespace Beeline.MobileId.Aggregator.Api
 
 			app.UseRouting();
 
+			app.UseHangfireDashboard();
+
 			app.UseMiddleware<LoggingMiddleware>();
 
 			app.UseAuthorization();
@@ -157,6 +180,8 @@ namespace Beeline.MobileId.Aggregator.Api
 			app.UseEndpoints(endpoints =>
 			{
 				endpoints.MapControllers();
+				endpoints.MapHealthChecks("/health", new HealthCheckOptions() { Predicate = (check) => check.Tags.Contains("all") });
+				endpoints.MapHealthChecks("/health/db", new HealthCheckOptions() { Predicate = (check) => check.Tags.Contains("db") });
 			});
 		}
 	}
