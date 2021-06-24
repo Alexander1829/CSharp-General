@@ -527,8 +527,7 @@ public static async Task<T?> SqlQueryRawAsync<T>(string query, Func<DbDataReader
 
 
 
-///<DI for console app.>
-
+//<DI for console app>
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
@@ -587,7 +586,7 @@ namespace DiSample
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             // This is where DI magic happens:
-            var shoppingCart = ActivatorUtilities.CreateInstance<ShoppingCart>(serviceProvider);
+            var shoppingCart = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<ShoppingCart>(serviceProvider);
 
             shoppingCart.PlaceOrder("customer@home.com", "2 Widgets");
 
@@ -596,14 +595,4 @@ namespace DiSample
         }
     }
 }
-
-
-<////DI for console app.>
-
-
-
-
-ГЛАВНЫЙ ПРИНЦИП ПРОГРАММИРОВАНИЯ:
-КАКОЕ-ТО РЕШЕНИЕ, НО РЕШЕНИЕ -
-НЕСРАВНИМО ЛУЧШЕ СУПЕРКРАСИВОГО
-МЕЧТАНИЯ, НЕ В КОДЕ
+//</DI for console app>
