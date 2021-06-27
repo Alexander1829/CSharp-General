@@ -1,33 +1,33 @@
-//ObsoleteAttribute - why should use :
-//Internally, it can be used in refactors to replace poorly-implemented-but-working functionality in a gradual way. 
+//Q: ObsoleteAttribute. Why should use? 
+//A: Internally, it can be used in refactors to replace poorly-implemented-but-working functionality in a gradual way. 
 //You mark it as obsolete and start working through the warnings until you see no more of them, then you can proceed to safely remove it.
 //The Obsolete attribute marks a program entity as one that is no longer recommended for use.
 
 /*
-Q: Set a constant object variable's fields
+//Q: Setting object's field like 'const' 
 
-ans1) As seen in the comments, for any variable that is not a primitive, 
-the const keyword 
-will not work. Instead you can use a combination of the static and readonly keywords.
+//For any variable that is not a primitive, 
+//the const keyword 
+//will not work. Instead you can use a combination of the static and readonly keywords.
 
 class MyClass
 {
-   public static readonly PictureBox availablePic = new PictureBox();
-   public static readonly PictureBox unavailablePic = new PictureBox();
+   public static readonly PictureBox AvailablePic = new();
+   public static readonly PictureBox UnavailablePic = new();
 
    static MyClass()
    {
       // Initialize the picture boxes here.
-      availablePic.Image = Image.FromFile("available.png");
+      AvailablePic.Image = Image.FromFile("available.png");
    }
 ...
 }
 
-ans2) You'll need to use readonly, not const, as you want to assign something that is not a compile time literal. To initialize the data you have several options:
+ans2) You'll need to use readonly, not const, as you want to assign something that is not a compile time literal. To initialize the data:
 
 Use an object initializer:
 
-public static readonly PictureBox box = new PictureBox() { Value = "sample" };
+public static readonly PictureBox AvailablePic = new() { Value = "sample" };
 */
 
 /* --- Задачи типа Task, Асинхронные методы. --- */
@@ -39,13 +39,10 @@ Task task = new Task(() =>  MyMethod());
 //Task task = new Task(delegate { MyMethod(); });
 //Task task = new Task(new Action( MyMethod));
 
-task.Start(); //Задача стартовала! Параллельно!
-/////
+task.Start(); //Задача стартовала! Параллельно
 task.Wait(); //Хотим дождаться выполнения задачи
-Task.WaitAll(task1, task2, task3); //Хотим дождаться выполнения нескольких(всех) задач
-
-Task<string> task = Task.Run<string>(()=>DateTime.Now.ToString());
-var result = task.Result;
+Task.WaitAll(task1, task2, task3); //Хотим дождаться выполнения всех(нескольких) задач
+Task.WaitAny(task1, task2, task3); //Первую выполнившуюся
 
 //Для того чтобы приостановить выполнение задачи из основного потока:
 CancellationTokenSource cts = new CancellationTokenSource();
@@ -82,15 +79,9 @@ foreach (Coffee coffee in coffeeList)
 Parallel.ForEach(coffeeList, l => CkeckAvailability(l));
 
 
-//PLINQ
-var strongCoffees =
-    from coffee in coffeeList.AsParallel()
-    where coffee.Strength > 3
-    select coffee;
-
-
 //Параллельный основному потоку запуск одной задачи После выполнения первой 
-Task<string> firstTask = new Task<string>(()=> { return "Hello!"; });
+Task<string> firstTask = new(() => { return "Hello!"; });
+//Task<string> firstTask = new(() => "Hello!");
 
 Task<string> secondTask = firstTask.ContinueWith((fres) =>
 {
@@ -105,18 +96,16 @@ Console.WriteLine(secondTask.Result);
 //!!! Основа: выигрыш при параллельности может быть достигнут ТОЛЬКО на многоядерных процессорах.
 //а сегодня процессоры всех эвм многоядерные
 
-private async void btnLongOperation_click(object sender)
+async void btnLongOperation_click(object sender)
 {
     Task<string> task1 = Task.Run<string>(()=> {
         //...
         return String.Format(""); });
     lblResult.Content =  await task1; //!!! Это не(!) lblResult.Content = task1.Result;    
-    //Это вернуться в эту строчку и записать Result в lblResult.Content
+    //Не блокируется основной поток
 }
 
-
-
-private async Task<string> GetData()
+async Task<string> GetData()
 {
     var result = await Task.Run<string>(
         () => {
@@ -127,7 +116,7 @@ private async Task<string> GetData()
     return result;
 }
 
-private async void btnGetData_click(object sender)
+async void btnGetData_click(object sender)
 {
     lblResult.Content = await GetData();
 }
@@ -138,10 +127,10 @@ private async void btnGetData_click(object sender)
 
 //Ещё важный пример await-а
 Customer customer = new Customer();
-var widgetsTask = _widgetService.GetAllWidgets(); //Уже запустился!!!! параллельно
-var foosTask = _fooService.GetAllWidgets(); //тоже запустился!!!! параллельно
-customer.Widgets = await widgetsTask; //а теперь дождёмся самого долгого!
-customer.Foos = await foosTask; //а теперь дождёмся самого долгого!
+var widgetsTask = _widgetService.GetAllWidgets(); //Уже запустился(!), параллельно
+var foosTask = _fooService.GetAllWidgets(); //тоже запустился(!), параллельно
+customer.Widgets = await widgetsTask; //а теперь дождёмся результата, освободив основной поток
+customer.Foos = await foosTask; //а теперь дождёмся, освободив основной поток
 
 return customer;
 
@@ -174,8 +163,8 @@ writer.Dispose();
 
 
 /* --- Methods --- */
-Extension method-ы - method-ы, чтобы воткнуть их в существующий класс, без изменения кода этого класса.(и без создания нового класса-наследника)
-public static class StatCl
+//Extension method
+public static class StringExt
 {
     public static bool IsGoodPassword(this string s)
     {
@@ -184,50 +173,13 @@ public static class StatCl
 }
 
 //Опциональные аргументы метода:
-public void ExampleMethod(int required, string optionalstr = "default string", int optionalint = 10){ }
 //Интересный пример:
-public static void DatesToPeriodConverter(DateTime start, DateTime end = DateTime.MinValue, out string date, out string time) { } // - incorrect 
-// - correct
-  public static void DatesToPeriodConverter(DateTime start, DateTime? end = null,
-     out string date, out string time)
+public static void DatesToPeriodConverter(DateTime start, DateTime end = DateTime.MinValue, out string date, out string time) {...} // - incorrect 
+public static void DatesToPeriodConverter(DateTime start, DateTime? end = null, out string date, out string time) // - correct
 {
-    var effectiveEnd = end ?? DateTime.MinValue; // и т.д.
+    var effectiveEnd = end ?? DateTime.MinValue;
+    ...
 }  
-
-
-Метод можно сделать abstract - просто заглушка без реализации(Тогда и весь класс придётся сделать abstract)
-
-abstract class Foo1
-{
-    public abstract void AbstrMet();
-	
-    public void RealMet()
-    {
-        // wise commands
-    }
-} 
-abstract метод считается автоматом virtual 
-
-abstract class Foo2: Foo1
-{
-    public abstract override void AbstrMet();
-}
-
-///out , ref аргументы.
-//ref должны инициализировать до вызова 
-static void test(ref int a)
-{
-    a++;
-    Console.WriteLine("test a = {0}", a);
-}
-
-//out аргумент можно объявить, без инициализации
-static void test2(out int a)
-{
-    a = 10;
-    a++;
-    Console.WriteLine("test a = {0}", a);
-}
 
 //Пример метода который копирует объект с помощью сериализации и десериализации.
 public static class ExtensionMethods
@@ -250,98 +202,27 @@ public static bool operator >(T left, T right)
     return true;
 }
 
-
-
-
-/* --- Dependency injection --- */
-Чем хорошо DI помимо основного своего назначения: 
-он на этапе компиляции отработал и всё. Проект-прога собралась, работает! //не тормозит !
-
-
-
-
-using (HttpClientHandler handler = new HttpClientHandler())
-{
-    handler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
-    handler.Proxy = new WebProxy("http://ms-proxy.abcd.ru:8080");
-    using (HttpClient client = new HttpClient(handler))                
-    {
-        client.BaseAddress = new Uri(this.DiscSettings.BaseAddress);
-        client.DefaultRequestHeaders.Add("Authorization", String.Concat("Basic ", this.ClientSettings.DiscoveryAuthString));
-        var methodUri = "v2/discovery";
-        var body = "{ \"Redirect_URL\": \"https://mmyadd.myurl.ru/api/v1/mymet\", \"MSISDN\": \"79061234567\" }";
-        var content = new StringContent(body);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var response = client.PostAsync(methodUri, content).Result;
-        var sc = response.StatusCode;
-    }
-}
-
-using (HttpClient client = new HttpClient())
-{
-    HttpClient.DefaultProxy.Credentials = CredentialCache.DefaultCredentials; 
-
-    var response = client.GetAsync(_url).Result;
-    string respContent = response.Content.ReadAsStringAsync().Result;    
-    //можно спарсить контент на JSON-формат
-    //var jsonResponse = JsonDocument.Parse(respContent);    
-    //jsonResponse.RootElement.GetProperty("");
-}
-/* --- Http Request, Response --- */
-var uri = "http://asd.com";
-var request1 = WebRequest.Create(uri) as HttpWebRequest;
-var dataReq1 = Encoding.Default.GetBytes(
-    "{\"field1\":\"val@1\"}"
-    );
-request1.Method = "POST";
-request1.ContentType = "application/json";
-request1.ContentLength = dataReq1.Length;
-//request1.Credentials = new NetworkCredential("userName","secretPasswd"); //Для авторизации на сервере
-var dataStream = request1.GetRequestStream();
-dataStream.Write(dataReq1, 0, dataReq1.Length); //!
-dataStream.Close(); //!
-
-//Response
-var response = request1.GetResponse() as HttpWebResponse;
-var stream = new StreamReader(response.GetResponseStream());
-//stream.ReadLine(); 
-stream.Close(); 
-
-
 http – hypper text transport protocol
 
 
-
-
 /* --- Constraints --- */
-//public static interface ISt // нельзя создать статический static интерфейс.
+//public static interface ISt // нельзя создать интерфейс для статики!
 //{
 //}
 
 //public interface ISt
 //{
-//    static void Mt(); 				//static нельзя в интерфейсах.
+//    static void Mt(); 			//static нельзя в интерфейсах.
 //    static int prop { get; set; }		//static нельзя в интерфейсах.
 //}
 
-//static class ClassSt1 /*: ClassSt2 */ // Наследование статических классов только от System.Object
+//static class ClassSt1 /*: ClassSt2 */ // Нельзя унаследоваться от статического класса. И статический класс наследуется только от System.Object
 //{
 //}
 
 public class CustomList<T> where T : ICollection { } // Теперь можно типизировать эту коллекцию только классами (ИЛИ Структурами) реализующими интерфейс  ICollection.
 public class CustomList<T>  where  T : IBeverage, IComparable<T>, new(), struct (только структурами), class (только классами)
 
-
-
-/* --- NullReferenceException --- */
-class A
-{
-    /*row1*/ public string str1; 
-    /*row1 Equvivalent to  public string str1 = (string)null;*/
-    /*row1 Equvivalent to  public string str1; public A(){ str1 = (string)null; }*/
-     
-    Console.WriteLine(new A().instStr1.Length); // System.NullReferenceException    
-}
 
 /* --- Журналирование --- */
 
@@ -353,54 +234,8 @@ if (!EventLog.SourceExists(eventSource))a
 EventLog.WriteEntry(eventSource, "Application started");
 
 
-/* --- LINQ --- */
-string[] mstr = { "ab", "cd", "cd" };
-List<string> lstr = new List<string>();
-lstr.Add("ab");
-lstr.Add("cd");
-lstr.Add("de");
-lstr.Add("cd");
-lstr.Add("cd");
-
-var query =
-    from el in lstr
-    where el != "ab"
-    select el;
-
-var query2 =
-    from el in lstr
-    join em in mstr on el equals em
-    select el;
-
-var query3 =
-    from el in lstr
-    where el != "ab"
-    group el by el into g
-    select /*new { a =*/ g.Key /*}*/;
-
-foreach (var e in query3)
-{
-    Console.WriteLine(e);
-}
-//////////////////////
-var query1 = from char c in charMass
-             group c by c into g
-             select new { a = g.Key, b = g.Count() }; // Создаём анонимный объект. Нать хоть как-то обозвать, просто не возьмёт
-//////////////////////
-var custSupJoin =
-    from sup in suppliers
-    join cust in customers on sup.Country equals cust.Country
-    select new { Country = sup.Country, SupplierName = sup.SupplierName, CustomerName = cust.CompanyName };
-
-var categories =
-    from prod in products
-    group prod by prod.Category into prodGroup
-    select new { Category = prodGroup.Key, TotalUnitsInStock = prodGroup.Sum(p => p.UnitsInStock) };
-
-
-
-
-/* --- Экземпляр и ссылка на экземпляр. --- */
+/* --- Экземпляр один. 
+Ссылок на экземпляр может быть от 0 до N/8, где N кол-во выделенной оперативной памяти N(byte). --- */
 char[] sch1 = new char[] { 'a', 'a', 'a', 'a', 'a'};
 char[] sch2 = sch1;
 for (int i = 0; i < sch2.Length; i++)
@@ -432,51 +267,46 @@ a
 
 
 
-
-
 /* --- Сериализация объекта. --- */
 using System.Runtime.Serialization.Formatters.Binary;
 
-ServiceConfigutation config = new
-    ServiceConfigutation();
+ServiceConfigutation config = new ();
 
 IFormatter formatter = new BinaryFormatter();
-FileStream buffer = File.Create ("filepath");
+FileStream buffer = File.Create("filepath");
 
 formatter.Serialize(buffer, config);
 buffer.Close();
 
 //Десериализация
 IFormatter formatter2 = new BinaryFormatter();
-FileStream buffer2 = File.OpenRead ("filepath");
+FileStream buffer2 = File.OpenRead("filepath");
 
 ServiceConfigutation config2 =
     formatter2.Deserialize(buffer2) as ServiceConfigutation;
 buffer2.Close();
 
 ///
-var requestBody = new DiscoveryRequest(... , ... , ...)
 JsonSerializer.Serialize(requestBody); //System.Text.Json.JsonSerializer
 ///
 var fullResponse = JsonSerializer.Deserialize<DiscoveryResponse>(responseString); //System.Text.Json.JsonSerializer
 
 
 
-
-///<Custom httpClient>
-
+//<Custom httpClient>
 public class GitHubClient
 {
-    public HttpClient Client { get; private set; }
+    public HttpClient Client { get; }
     
-    public GitHubClient(HttpClient httpClient)
+    public GitHubClient(HttpClient httpClient) //конструктор
     {
-        httpClient.BaseAddress = new Uri("https://api.github.com/");
+        httpClient.BaseAddress = new Uri("https://api.github.com/"); 
         httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
         httpClient.DefaultRequestHeaders.Add("User-Agent", "HttpClientFactory-Sample");
         Client = httpClient;
     }
 }
+
 
 //Register this as a typed client using the following line.
 services.AddHttpClient<GitHubClient>();
@@ -485,7 +315,7 @@ services.AddHttpClient<GitHubClient>();
 //And, use it in the following way in the API controller.
 public class ValuesController : Controller
 {
-    private readonly GitHubClient _gitHubClient;;
+    GitHubClient _gitHubClient;;
   
     public ValuesController(GitHubClient gitHubClient)
     {
@@ -499,9 +329,7 @@ public class ValuesController : Controller
         return Ok(result);
     }
 }
-
-
-<////Custom httpClient>
+//</Custom httpClient>
 
 
 
