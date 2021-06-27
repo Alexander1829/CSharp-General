@@ -1,3 +1,8 @@
+//ObsoleteAttribute - why should use :
+//Internally, it can be used in refactors to replace poorly-implemented-but-working functionality in a gradual way. 
+//You mark it as obsolete and start working through the warnings until you see no more of them, then you can proceed to safely remove it.
+//The Obsolete attribute marks a program entity as one that is no longer recommended for use.
+
 /*
 Q: Set a constant object variable's fields
 
