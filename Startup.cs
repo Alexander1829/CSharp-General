@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using Beeline.MobileId.Aggregator.Api.Logging;
+using Beeline.MobileId.Aggregator.Api.Controllers;
 using Beeline.MobileId.Aggregator.BusinessLogic;
-using Beeline.MobileId.Aggregator.BusinessLogic.Billing;
 using Beeline.MobileId.Aggregator.BusinessLogic.Dal;
 using Beeline.MobileId.Aggregator.BusinessLogic.Dal.Repositories;
 using Beeline.MobileId.Aggregator.Common;
+using Beeline.MobileId.Aggregator.Common.Logging;
 using Beeline.MobileId.Aggregator.Db;
 using Beeline.MobileId.Aggregator.Integrations.Discovery;
 using Beeline.MobileId.Aggregator.Integrations.Idgw;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -23,7 +24,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.OpenApi.Models;
 using static Microsoft.EntityFrameworkCore.NpgsqlDbContextOptionsBuilderExtensions;
-using Hangfire;
 
 namespace Beeline.MobileId.Aggregator.Api
 {
@@ -36,11 +36,10 @@ namespace Beeline.MobileId.Aggregator.Api
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddControllers();
-			services.AddHealthChecks().AddSqlServer(Configuration["ApiApplicationSettings:AggregatorDb"], tags: new[] { "db", "all" });
+			services.AddHealthChecks().AddSqlServer(Configuration["ApiApplicationSettings:AggregatorDb"], tags: new[] { "db" });
 			services.AddMemoryCache();
 			services.AddDbContext<AppDbContext>(options => options.UseNpgsql(Configuration["ApiApplicationSettings:ServiceDb"]));
 			services.AddHangfire(x => x.UseSqlServerStorage(Configuration["ApiApplicationSettings:AggregatorDb"]));
-			services.AddHangfireServer();
 
 			services.AddSwaggerGen(c =>
 			{
@@ -109,7 +108,6 @@ namespace Beeline.MobileId.Aggregator.Api
 			services.AddTransient<DIRequestAuthorizationService>();
 			services.AddTransient<DIMCTokenService>();
 			services.AddTransient<DIRequestValidationService>();
-			services.AddTransient<StateDIAuthorizationService>();
 			services.AddTransient<StatePremiumInfoService>();
 			services.AddTransient<PremiumInfoValidationService>();
 
@@ -141,6 +139,17 @@ namespace Beeline.MobileId.Aggregator.Api
 
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 		{
+			app.UseNLogHelper();
+			app.MapRequesResponseLogger(
+				new PathString[]
+			{
+				"/"
+			}, new PathString[]
+			{
+				"/swagger"
+			}
+				);
+
 			app.UseSwagger();
 
 			app.UseSwaggerUI(c =>
@@ -155,7 +164,8 @@ namespace Beeline.MobileId.Aggregator.Api
 
 			app.UseExceptionHandler(applicationBuilder => applicationBuilder.Run(async httpContext =>
 			{
-				if (httpContext.Features.Get<IExceptionHandlerPathFeature>().Error is UnifiedException unifiedException)
+				var error = httpContext.Features.Get<IExceptionHandlerPathFeature>().Error;
+				if (error is UnifiedException unifiedException)
 				{
 					httpContext.Response.StatusCode = (int)OAuth2ErrorDetails.GetCode(unifiedException.Error);
 					Dictionary<string, string> response = new() { [OpenIdConnectParameterNames.Error] = OAuth2ErrorDetails.GetText(unifiedException.Error) };
@@ -164,14 +174,14 @@ namespace Beeline.MobileId.Aggregator.Api
 					await httpContext.Response.WriteAsJsonAsync(response);
 				}
 				else
+				{
 					await httpContext.Response.WriteAsJsonAsync(new Dictionary<string, string> { [OpenIdConnectParameterNames.Error] = OAuth2ErrorDetails.GetText(OAuth2Error.ServerError) });
+				}
 			}));
 
 			app.UseRouting();
 
 			app.UseHangfireDashboard();
-
-			app.UseMiddleware<LoggingMiddleware>();
 
 			app.UseAuthorization();
 
@@ -180,8 +190,8 @@ namespace Beeline.MobileId.Aggregator.Api
 			app.UseEndpoints(endpoints =>
 			{
 				endpoints.MapControllers();
-				endpoints.MapHealthChecks("/health", new HealthCheckOptions() { Predicate = (check) => check.Tags.Contains("all") });
-				endpoints.MapHealthChecks("/health/db", new HealthCheckOptions() { Predicate = (check) => check.Tags.Contains("db") });
+				endpoints.MapHealthChecks("/p-health", new HealthCheckOptions());
+				endpoints.MapHealthChecks("/p-health/db", new HealthCheckOptions() { Predicate = (check) => check.Tags.Contains("db") });
 			});
 		}
 	}
